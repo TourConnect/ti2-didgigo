@@ -12,16 +12,16 @@ describe('location', () => {
   const testLocation = {
     locationName: faker.commerce.productName(),
     description: faker.lorem.paragraph(),
-    media: {
-      images: [
-        {
-          url: faker.image.image(),
-        },
-        {
-          url: faker.image.image(),
-        },
-      ],
-    },
+    // media: {
+    //   images: [
+    //     {
+    //       url: faker.image.image(),
+    //     },
+    //     {
+    //       url: faker.image.image(),
+    //     },
+    //   ],
+    // },
     roomCount: faker.random.number({ min: 1, max: 100 }),
     location: {
       country: faker.address.country(),
@@ -34,10 +34,10 @@ describe('location', () => {
         lng: faker.address.longitude(),
       },
     },
-    productType: 'accomodation', // or non-accomodation
+    productType: 'accommodation', // or non-accomodation
   };
   let allLocations;
-  it('should be able to create a location', async () => {
+  it.only('should be able to create a location', async () => {
     const retVal = await app.createLocation({ token, payload: testLocation });
     expect(Object.keys(retVal)).toEqual(expect.arrayContaining(['locationId']));
     testLocation.locationId = retVal.locationId;

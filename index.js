@@ -27,6 +27,7 @@ const doMap = (obj, map) => {
           }
         });
       } else if (translate) {
+        // console.log({ translate });
         const [remapName, newVal] = translate;
         if (newVal !== undefined) {
           retVal[remapName] = newVal;
@@ -176,13 +177,15 @@ const getLocation = async ({ locationId }) => {
 const createLocation = async ({ token, payload }) => {
   const mapped = doMap(payload, locationMapOut);
   const body = {
-    product: [{
+    products: [{
       ...mapped,
       supplier: {
         id: token,
+        type: 'Supplier',
       },
     }],
   };
+  // console.log(JSON.stringify(body, null, 2));
   const createReply = await request({
     method: 'post',
     uri: `${apiUrl}/products/create/`,
@@ -190,6 +193,7 @@ const createLocation = async ({ token, payload }) => {
     body,
     json: true,
   });
+  console.log({ createReply });
   // TODO: Ask Didgigo how to get the created product Id,
   // once it works.
   assert(Boolean(
