@@ -27,7 +27,6 @@ const doMap = (obj, map) => {
           }
         });
       } else if (translate) {
-        // console.log({ translate });
         const [remapName, newVal] = translate;
         if (newVal !== undefined) {
           retVal[remapName] = newVal;
@@ -78,9 +77,10 @@ const locationMapOut = {
   media: (val) => {
     const retVal = {};
     Object.keys(val).forEach((type) => {
-      retVal[type] = doMap(val[type], mediaMapOut);
+      if (!retVal[type]) retVal[type] = [];
+      retVal[type].push(doMap(val[type], mediaMapOut)[1]);
     });
-    return retVal;
+    return ['media', retVal];
   },
   roomCount: () => {},
   location: (val) => ['location', doMap(val, locationLocationMapOut)],
@@ -193,7 +193,7 @@ const createLocation = async ({ token, payload }) => {
     body,
     json: true,
   });
-  console.log({ createReply });
+  // console.log({ createReply });
   // TODO: Ask Didgigo how to get the created product Id,
   // once it works.
   assert(Boolean(
@@ -235,7 +235,8 @@ const productMapOut = {
   media: (val) => {
     const retVal = {};
     Object.keys(val).forEach((type) => {
-      retVal[type] = doMap(val[type], mediaMapOut);
+      if (!retVal[type]) retVal[type] = [];
+      retVal[type].push(doMap(val[type], mediaMapOut)[1]);
     });
     return ['media', retVal];
   },

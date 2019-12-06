@@ -12,16 +12,16 @@ describe('location', () => {
   const testLocation = {
     locationName: faker.commerce.productName(),
     description: faker.lorem.paragraph(),
-    // media: {
-    //   images: [
-    //     {
-    //       url: faker.image.image(),
-    //     },
-    //     {
-    //       url: faker.image.image(),
-    //     },
-    //   ],
-    // },
+    media: {
+      images: [
+        {
+          url: faker.image.image(),
+        },
+        {
+          url: faker.image.image(),
+        },
+      ],
+    },
     roomCount: faker.random.number({ min: 1, max: 100 }),
     location: {
       country: faker.address.country(),
