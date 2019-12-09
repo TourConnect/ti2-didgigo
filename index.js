@@ -178,7 +178,7 @@ const createLocation = async ({ token, payload }) => {
   const body = {
     product: [{
       ...mapped,
-      supplier: {
+      company: {
         id: token,
       },
     }],
@@ -206,7 +206,7 @@ const updateLocation = async ({ token, locationId, payload }) => {
     product: [{
       id: locationId,
       ...mapped,
-      supplier: {
+      company: {
         id: token,
       },
     }],
@@ -283,7 +283,7 @@ const createProduct = async ({ token, locationId, payload }) => {
     product: [{
       id: locationId,
       ...mapped,
-      supplier: {
+      company: {
         id: token,
       },
       options: [
@@ -316,7 +316,7 @@ const updateProduct = async ({
     product: [{
       id: locationId,
       ...mapped,
-      supplier: {
+      company: {
         id: token,
       },
       options: [
