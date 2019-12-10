@@ -285,7 +285,7 @@ const createProduct = async ({ token, locationId, payload }) => {
   // product aka product option
   const mapped = doMap(payload, productMapOut);
   const body = {
-    product: [{
+    products: [{
       id: locationId,
       ...mapped,
       company: {
@@ -296,6 +296,7 @@ const createProduct = async ({ token, locationId, payload }) => {
       ],
     }],
   };
+  // console.log(JSON.stringify(body, null, 1));
   const updateReply = await request({
     method: 'post',
     uri: `${apiUrl}/products/create/`,
