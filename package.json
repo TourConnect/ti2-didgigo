@@ -6,6 +6,9 @@
   "scripts": {
     "test": "jest -i -b"
   },
+  "jest": {
+    "runner": "jest-serial-runner"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TourConnect/ti2-didgigo.git"
@@ -26,6 +29,7 @@
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.18.2",
     "faker": "^4.1.0",
-    "jest": "^24.9.0"
+    "jest": "^24.9.0",
+    "jest-serial-runner": "^1.1.0"
   }
 }
