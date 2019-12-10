@@ -103,6 +103,7 @@ const locationLocationMapIn = {
 };
 
 const locationMapIn = {
+  company: () => undefined,
   id: (val) => ['locationId', val],
   name: (val) => ['locationName', val],
   descriptions: (val) => ['description', val.long],
@@ -157,7 +158,7 @@ const getProfile = async ({ token }) => {
 const getLocations = async ({ token }) => {
   const locationList = await request({
     method: 'get',
-    uri: `${apiUrl}/products/by-supplier/${token}?limit=100`,
+    uri: `${apiUrl}/products/by-supplier/${token}?limit=1000`,
     headers,
     json: true,
   });
@@ -171,6 +172,7 @@ const getLocation = async ({ locationId }) => {
     headers,
     json: true,
   });
+  // console.log(JSON.stringify(aLocation, null, 1));
   return doMap(aLocation, locationMapIn);
 };
 
@@ -193,16 +195,14 @@ const createLocation = async ({ token, payload }) => {
     body,
     json: true,
   });
-  // console.log({ createReply });
-  // TODO: Ask Didgigo how to get the created product Id,
-  // once it works.
   assert(Boolean(
     createReply.error === undefined
-    && Array.isArray(createReply.product)
-    && createReply.product.length > 0
-    && createReply.product[0].id > 0,
+    && Array.isArray(createReply)
+    && createReply.length > 0
+    && createReply[0] > 0,
   ), true);
-  return ({ locationId: createReply.product[0].id });
+  const locationId = createReply[0];
+  return ({ locationId });
 };
 const updateLocation = async ({ token, locationId, payload }) => {
   const mapped = doMap(payload, locationMapOut);

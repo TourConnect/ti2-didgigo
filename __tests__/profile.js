@@ -13,7 +13,7 @@ describe('profile and key tests', () => {
     it('try an invalid key', async () => {
       const retVal = await app.validateToken({ token: faker.random.uuid() });
       expect(retVal).toBe(false);
-    });
+    }, 30e3);
     it('try a valid key', async () => {
       const retVal = await app.validateToken({ token });
       expect(retVal).toBe(true);

@@ -70,7 +70,7 @@ describe('products', () => {
     });
     expect(Object.keys(retVal)).toEqual(expect.arrayContaining(['productId']));
     testProduct.productId = retVal.productId;
-  });
+  }, 30e3);
   it('should be able to retrieve all products', async () => {
     allProducts = await app.getProducts({ token, locationId: testProduct.locationId });
     expect(Array.isArray(allProducts)).toBe(true);

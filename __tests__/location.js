@@ -37,16 +37,16 @@ describe('location', () => {
     productType: 'accommodation', // or non-accomodation
   };
   let allLocations;
-  it.only('should be able to create a location', async () => {
+  it('should be able to create a location', async () => {
     const retVal = await app.createLocation({ token, payload: testLocation });
     expect(Object.keys(retVal)).toEqual(expect.arrayContaining(['locationId']));
     testLocation.locationId = retVal.locationId;
-  });
+  }, 30e3);// doing the first request usually takes longer
   it('should be able to retrieve all locations', async () => {
     allLocations = await app.getLocations({ token });
     expect(Array.isArray(allLocations)).toBe(true);
   });
-  it('the new product should be on the list', async () => {
+  it('the new location should be on the list', async () => {
     expect(Array.isArray(allLocations)).toBe(true);
     expect(allLocations.map(({ productId }) => productId))
       .toEqual(expect.arrayContaining([testLocation.productId]));
