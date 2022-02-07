@@ -1,17 +1,22 @@
 /* global describe it expect */
-const faker = require('faker');
-const app = require('../index');
+const chance = require('chance').Chance();
+const Plugin = require('../index');
 
-const {
-  env: {
-    'ti2-didgigo-testSupplierId': token,
-  },
-} = process;
+const app = new Plugin();
+
+const token = {
+  apiUrl: process.env.ti2_didgigo_apiUrl,
+  appToken: process.env.ti2_didgigo_appToken,
+  supplierToken: process.env.ti2_didgigo_testSupplierId,
+};
 
 describe('profile and key tests', () => {
   describe('key', () => {
     it('try an invalid key', async () => {
-      const retVal = await app.validateToken({ token: faker.random.uuid() });
+      const retVal = await app.validateToken({
+        ...token,
+        supplierToken: chance.guid(),
+      });
       expect(retVal).toBe(false);
     }, 30e3);
     it('try a valid key', async () => {
@@ -27,20 +32,20 @@ describe('profile and key tests', () => {
     });
     // current didgigo API can't update profile info / data
     it.skip('should be able to update a profile', async () => {
-      const { address } = faker;
+      // const { address } = faker;
       const nuData = {
-        name: faker.company.companyName(),
-        description: faker.lorem.paragraph(),
-        website: faker.internet.url(),
+        name: chance.company(),
+        description: chance.paragraph(),
+        website: chance.url(),
         address: {
-          country: address.country(),
-          state: address.state(),
-          city: address.city(),
-          postalCode: address.zipCode(),
-          address1: address.streetAddress(),
+          country: chance.country(),
+          state: chance.state(),
+          city: chance.city(),
+          postalCode: chance.zip(),
+          address1: chance.address(),
           gps: {
-            lat: address.latitude(),
-            lng: address.longitude(),
+            lat: chance.latitude(),
+            lng: chance.longitude(),
           },
         },
       };

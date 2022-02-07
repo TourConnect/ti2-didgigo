@@ -4,7 +4,7 @@
   "description": "Ti2 didgigo plugin",
   "main": "index.js",
   "scripts": {
-    "test": "jest -i -b"
+    "test": "jest"
   },
   "jest": {
     "runner": "jest-serial-runner"
@@ -24,10 +24,10 @@
     "request-promise": "^4.2.5"
   },
   "devDependencies": {
-    "eslint": "^6.5.1",
-    "eslint-config-airbnb": "^18.0.1",
-    "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-plugin-import": "^2.18.2",
+    "chance": "^1.1.8",
+    "eslint": "^7.22.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
     "faker": "^4.1.0",
     "jest": "^24.9.0",
     "jest-serial-runner": "^1.1.0"

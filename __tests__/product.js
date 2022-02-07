@@ -1,12 +1,13 @@
 /* global describe beforeAll it expect */
 const faker = require('faker');
-const app = require('../index');
+const Plugin = require('../index');
+const app = new Plugin();
 
-const {
-  env: {
-    'ti2-didgigo-testSupplierId': token,
-  },
-} = process;
+const token = {
+  apiUrl: process.env.ti2_didgigo_apiUrl,
+  appToken: process.env.ti2_didgigo_appToken,
+  supplierToken: process.env.ti2_didgigo_testSupplierId,
+};
 
 describe('products', () => {
   let allProducts;

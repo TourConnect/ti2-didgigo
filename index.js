@@ -1,18 +1,11 @@
-require('dotenv').config();
+// require('dotenv').config();
 const request = require('request-promise');
 const assert = require('assert');
 
-const {
-  env: {
-    'ti2-didgigo-apiUrl': apiUrl,
-    'ti2-didgigo-appToken': appToken,
-  },
-} = process;
-
-const headers = {
+const getHeaders = (appToken) => ({
   'x-Api-Key': appToken,
   accept: 'application/json',
-};
+});
 
 const doMap = (obj, map) => {
   const retVal = {};
@@ -118,113 +111,6 @@ const locationMapIn = {
   type: (val) => ['productType', val === 'Accomodation' ? 'accomodation' : 'non-accomodation'],
 };
 
-const validateToken = async ({ token }) => {
-  try {
-    // check the app Api Key
-    const atResponse = await request({
-      method: 'get',
-      uri: `${apiUrl}/self`,
-      headers,
-      json: true,
-    });
-    assert(atResponse.api_key, appToken);
-    // check the supplierId (aka token)
-    const supplierReq = await request({
-      method: 'get',
-      uri: `${apiUrl}/suppliers/by-id/${token}`,
-      headers,
-      json: true,
-    });
-    assert(supplierReq.id.toString(), token.toString());
-  } catch (err) {
-    return false;
-  }
-  return true;
-};
-
-const getProfile = async ({ token }) => {
-  const supplierReq = await request({
-    method: 'get',
-    uri: `${apiUrl}/suppliers/by-id/${token}`,
-    headers,
-    json: true,
-  });
-  const retVal = doMap(supplierReq, profileMapIn);
-  return retVal;
-};
-
-// didgigo can't update a profile
-// const updateProfile = async ({ token, payload }) => {}
-const getLocations = async ({ token }) => {
-  const locationList = await request({
-    method: 'get',
-    uri: `${apiUrl}/products/by-supplier/${token}?limit=1000`,
-    headers,
-    json: true,
-  });
-  return locationList.map((location) => doMap(location, locationMapIn));
-};
-
-const getLocation = async ({ locationId }) => {
-  const aLocation = await request({
-    method: 'get',
-    uri: `${apiUrl}/product/by-id/${locationId}`,
-    headers,
-    json: true,
-  });
-  // console.log(JSON.stringify(aLocation, null, 1));
-  return doMap(aLocation, locationMapIn);
-};
-
-const createLocation = async ({ token, payload }) => {
-  const mapped = doMap(payload, locationMapOut);
-  const body = {
-    products: [{
-      ...mapped,
-      company: {
-        id: token,
-        type: 'Supplier',
-      },
-    }],
-  };
-  // console.log(JSON.stringify(body, null, 2));
-  const createReply = await request({
-    method: 'post',
-    uri: `${apiUrl}/products/create/`,
-    headers,
-    body,
-    json: true,
-  });
-  assert(Boolean(
-    createReply.error === undefined
-    && Array.isArray(createReply)
-    && createReply.length > 0
-    && createReply[0] > 0,
-  ), true);
-  const locationId = createReply[0];
-  return ({ locationId });
-};
-const updateLocation = async ({ token, locationId, payload }) => {
-  const mapped = doMap(payload, locationMapOut);
-  const body = {
-    product: [{
-      id: locationId,
-      ...mapped,
-      company: {
-        id: token,
-      },
-    }],
-  };
-  const updateReply = await request({
-    method: 'post',
-    uri: `${apiUrl}/products/create/`,
-    headers,
-    body,
-    json: true,
-  });
-  return (updateReply.error === undefined);
-};
-
 const productMapOut = {
   plroductId: (val) => ['id', val],
   productName: (val) => ['name', val],
@@ -257,103 +143,274 @@ const productMapIn = {
   location: (val) => ['location', doMap(val, locationLocationMapIn)],
 };
 
-const getProducts = async ({ locationId }) => {
-  // return all product options
-  const aLocation = await request({
-    method: 'get',
-    uri: `${apiUrl}/product/by-id/${locationId}`,
-    headers,
-    json: true,
-  });
-  return aLocation.options.map((option) => doMap(option, productMapIn));
-};
+class Plugin {
+  constructor(params = {}) { // we get the env variables from here
+    Object.entries(params).forEach(([attr, value]) => {
+      this[attr] = value;
+    });
+  }
 
-const getProduct = async ({ locationId, productId }) => {
-  const aLocation = await request({
-    method: 'get',
-    uri: `${apiUrl}/product/by-id/${locationId}`,
-    headers,
-    json: true,
-  });
-  assert(Array.isArray(aLocation.options));
-  return doMap(
-    aLocation.options.filter(({ id }) => id === productId)[0],
-    productMapIn,
-  );
-};
-const createProduct = async ({ token, locationId, payload }) => {
-  // product aka product option
-  const mapped = doMap(payload, productMapOut);
-  const body = {
-    products: [{
-      id: locationId,
-      ...mapped,
-      company: {
-        id: token,
-      },
-      options: [
-        payload, // TODO: should we include all the options on the payload ?
-      ],
-    }],
-  };
-  // console.log(JSON.stringify(body, null, 1));
-  const updateReply = await request({
-    method: 'post',
-    uri: `${apiUrl}/products/create/`,
-    headers,
-    body,
-    json: true,
-  });
-  assert(updateReply.error === undefined);
-  // TODO: get the inserted product (aka option) id
-  assert(Array.isArray(updateReply.options));
-  const productId = updateReply.options[updateReply.options.length - 1].id;
-  return { productId };
-};
+  // async validateToken({ token: { apiKey } }) {
+  async validateToken({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+      supplierToken = this.supplierToken,
+    },
+  }) {
+    try {
+      // check the app Api Key
+      const atResponse = await request({
+        method: 'get',
+        uri: `${apiUrl}/self`,
+        headers: getHeaders(appToken),
+        json: true,
+      });
+      assert(atResponse.api_key, appToken);
+      // check the supplierId (aka token)
+      const supplierReq = await request({
+        method: 'get',
+        uri: `${apiUrl}/suppliers/by-id/${supplierToken}`,
+        headers: getHeaders(appToken),
+        json: true,
+      });
+      assert(supplierReq.id.toString(), supplierToken.toString());
+    } catch (err) {
+      return false;
+    }
+    return true;
+  }
 
-const updateProduct = async ({
-  token,
-  locationId,
-  productId,
-  payload,
-}) => {
-  const mapped = doMap(payload, productMapOut);
-  const body = {
-    product: [{
-      id: locationId,
-      ...mapped,
-      company: {
-        id: token,
-      },
-      options: [
-        {
-          id: productId, // TODO: does sending an existing Id updates the option ?
-          ...payload, // TODO: should we include all the options in order not to loose them?
+  async getProfile({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+      supplierToken = this.supplierToken,
+    },
+  }) {
+    const supplierReq = await request({
+      method: 'get',
+      uri: `${apiUrl}/suppliers/by-id/${supplierToken}`,
+      headers: getHeaders(appToken),
+      json: true,
+    });
+    const retVal = doMap(supplierReq, profileMapIn);
+    return retVal;
+  }
+
+  // didgigo can't update profile information :(
+  // async updateProfile = async ({ token, payload }) => {}
+
+  async getLocations({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+      supplierToken = this.supplierToken,
+    },
+  }) {
+    const locationList = await request({
+      method: 'get',
+      uri: `${apiUrl}/products/by-supplier/${supplierToken}?limit=1000`,
+      headers: getHeaders(appToken),
+      json: true,
+    });
+    return locationList.map((location) => doMap(location, locationMapIn));
+  }
+
+  async getLocation({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+    },
+    locationId,
+  }) {
+    const aLocation = await request({
+      method: 'get',
+      uri: `${apiUrl}/product/by-id/${locationId}`,
+      headers: getHeaders(appToken),
+      json: true,
+    });
+    // console.log(JSON.stringify(aLocation, null, 1));
+    return doMap(aLocation, locationMapIn);
+  }
+
+  async createLocation({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+      supplierToken = this.supplierToken,
+    },
+    payload,
+  }) {
+    const mapped = doMap(payload, locationMapOut);
+    const body = {
+      products: [{
+        ...mapped,
+        company: {
+          id: supplierToken,
+          type: 'Supplier',
         },
-      ],
-    }],
-  };
-  const updateReply = await request({
-    method: 'post',
-    uri: `${apiUrl}/products/create/`,
-    headers,
-    body,
-    json: true,
-  });
-  assert(updateReply.error === undefined);
-  return true;
-};
+      }],
+    };
+    // console.log(JSON.stringify(body, null, 2));
+    const createReply = await request({
+      method: 'post',
+      uri: `${apiUrl}/products/create/`,
+      headers: getHeaders(appToken),
+      body,
+      json: true,
+    });
+    assert(Boolean(
+      createReply.error === undefined
+      && Array.isArray(createReply)
+      && createReply.length > 0
+      && createReply[0] > 0,
+    ), true);
+    const locationId = createReply[0];
+    return ({ locationId });
+  }
 
-module.exports = {
-  validateToken,
-  getProfile,
-  // updateProfile,
-  getLocations,
-  getLocation,
-  createLocation,
-  updateLocation,
-  getProducts,
-  getProduct,
-  createProduct,
-  updateProduct,
-};
+  async updateLocation({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+      supplierToken = this.supplierToken,
+    },
+    locationId,
+    payload,
+  }) {
+    const mapped = doMap(payload, locationMapOut);
+    const body = {
+      product: [{
+        id: locationId,
+        ...mapped,
+        company: {
+          id: supplierToken,
+        },
+      }],
+    };
+    const updateReply = await request({
+      method: 'post',
+      uri: `${apiUrl}/products/create/`,
+      headers: getHeaders(appToken),
+      body,
+      json: true,
+    });
+    return (updateReply.error === undefined);
+  }
+
+  async getProducts({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+    },
+    locationId,
+  }) {
+    // return all product options
+    const aLocation = await request({
+      method: 'get',
+      uri: `${apiUrl}/product/by-id/${locationId}`,
+      headers: getHeaders(appToken),
+      json: true,
+    });
+    return aLocation.options.map((option) => doMap(option, productMapIn));
+  }
+
+  async getProduct({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+    },
+    locationId,
+    productId,
+  }) {
+    const aLocation = await request({
+      method: 'get',
+      uri: `${apiUrl}/product/by-id/${locationId}`,
+      headers: getHeaders(appToken),
+      json: true,
+    });
+    assert(Array.isArray(aLocation.options));
+    return doMap(
+      aLocation.options.filter(({ id }) => id === productId)[0],
+      productMapIn,
+    );
+  }
+
+  async createProduct({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+      supplierToken = this.supplierToken,
+    },
+    locationId,
+    payload,
+  }) {
+    // product aka product option
+    const mapped = doMap(payload, productMapOut);
+    const body = {
+      products: [{
+        id: locationId,
+        ...mapped,
+        company: {
+          id: supplierToken,
+        },
+        options: [
+          payload, // TODO: should we include all the options on the payload ?
+        ],
+      }],
+    };
+    // console.log(JSON.stringify(body, null, 1));
+    const updateReply = await request({
+      method: 'post',
+      uri: `${apiUrl}/products/create/`,
+      headers: getHeaders(appToken),
+      body,
+      json: true,
+    });
+    assert(updateReply.error === undefined);
+    // TODO: get the inserted product (aka option) id
+    assert(Array.isArray(updateReply.options));
+    const productId = updateReply.options[updateReply.options.length - 1].id;
+    return { productId };
+  }
+
+  async updateProduct({
+    token: {
+      apiUrl = this.apiUrl,
+      appToken = this.appToken,
+      supplierToken = this.supplierToken,
+    },
+    locationId,
+    productId,
+    payload,
+  }) {
+    const mapped = doMap(payload, productMapOut);
+    const body = {
+      product: [{
+        id: locationId,
+        ...mapped,
+        company: {
+          id: supplierToken,
+        },
+        options: [
+          {
+            id: productId, // TODO: does sending an existing Id updates the option ?
+            ...payload, // TODO: should we include all the options in order not to loose them?
+          },
+        ],
+      }],
+    };
+    const updateReply = await request({
+      method: 'post',
+      uri: `${apiUrl}/products/create/`,
+      headers: getHeaders(appToken),
+      body,
+      json: true,
+    });
+    assert(updateReply.error === undefined);
+    return true;
+  }
+}
+
+module.exports = Plugin;
